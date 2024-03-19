@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digiscan Access System - Landing</title>
+    <!-- Link your CSS file here if needed -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='sccs.css') }}">
+</head>
+<body>
+    <div class="hi">
+        <h1>Welcome to Digiscan Access System</h1>
+    </div>
+
+    <div class="menu">
+        <ul>
+            <li><a href="/profile">Profile</a></li>
+            <li><a href="/documents">Documents</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
+
+    <main>
+        <section>
+            <h2 id="hio">About Digiscan Access System</h2>
+            <p id="info">
+                Digiscan Access System is a secure image uploading system designed to safeguard sensitive data through the implementation of secret key authentication. This system ensures that only authorized users with the correct secret key can upload images securely. By utilizing robust encryption techniques and stringent access controls, Digiscan Access System provides a reliable platform for users to securely upload images while mitigating the risk of unauthorized access. This ensures the confidentiality and integrity of uploaded data, making it an ideal solution for organizations and individuals seeking to protect their sensitive information.</p>
+        </section>
+
+        <section>
+            <h1>Options</h1>
+            <p id="info">
+                The options provided cater to distinct authentication methods for accessing documents within the system. "Normal Access" allows users to upload documents securely solely by employing a secret key, ensuring straightforward and efficient document management. Conversely, "Face Access" employs a more sophisticated authentication approach, requiring users to undergo facial recognition for access, thus bolstering security measures by incorporating biometric authentication into the process. These options afford users the flexibility to choose between simplicity and advanced security measures, catering to diverse user needs and preferences within the document management system
+            </p>
+            <h2>Choose the type of access:</h2>
+            <ul>
+                <li><a href="/normal-access">Normal Access</a> - Access simple documents using login credentials.</li>
+                <li><a href="http://127.0.0.1:8080/face-recognition">Face Access</a> - Access confidential documents using Face scan.</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Digiscan Access System. All rights reserved.</p>
+    </footer>
+</body>
+</html>

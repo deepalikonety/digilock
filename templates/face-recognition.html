@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Access</title>
+    <!-- Add any CSS styles here -->
+</head>
+<body>
+    <h1>Face Access</h1>
+    <p>Click the button below to access the system using face recognition:</p>
+    <div id="cameraFeed"></div>
+    <button id="captureButton">Capture Image</button>
+    <script>
+        // Access the camera when the page is loaded
+        document.addEventListener("DOMContentLoaded", function(event) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    var videoElement = document.createElement('video');
+                    videoElement.srcObject = stream;
+                    document.getElementById('cameraFeed').appendChild(videoElement);
+                    videoElement.play();
+                })
+                .catch(function(err) {
+                    console.error('Error accessing the camera:', err);
+                });
+        });
+
+        // Capture image from the camera when the capture button is clicked
+        document.getElementById('captureButton').addEventListener('click', function() {
+            var videoElement = document.querySelector('video');
+            var canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            var context = canvas.getContext('2d');
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            var imageDataURL = canvas.toDataURL('image/jpeg');
+            
+            // Create a hidden input field and set its value to the captured image
+            var hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'image';
+            hiddenInput.value = imageDataURL;
+            document.body.appendChild(hiddenInput);
+
+            // Submit the form containing the captured image
+            document.querySelector('form').submit();
+        });
+    </script>
+</body>
+</html>
