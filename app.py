@@ -1,7 +1,10 @@
+import face_recognition
 from flask import Flask, render_template, request, redirect, url_for, session, send_file
 from flask_mysqldb import MySQL
 import io
 import dropbox
+import cv2
+import threading
 
 app = Flask(__name__)
 
@@ -14,7 +17,7 @@ app.config['MYSQL_DB'] = 'deepali'
 mysql = MySQL(app)
 
 # Routes for user authentication
-DROPBOX_ACCESS_TOKEN ='sl.BxzsrcweUMXtvH2MWiMxtzdgUdWjd5iwczcqzN8eSqjy_zbbFmvj3q7NZyJbNYAGObmsReLj8b8Zvn920N8srByJ0scWHh8tD2E_LZJ4LM8cdL1IDfGTA9Aii5cykP5YI5j7R6aWBhSm'
+DROPBOX_ACCESS_TOKEN ='sl.BxzFKT08aAmnNtz0kX7vBgxNLi8sHdu8ZxluD2utnjhA1r2DT0A3Loyf1EU7p6v-EZMVqFUHHIf0eV-IUvoSQ2OqD7xp1WdtaEwRMVapXnXREHT6HMTqOjWSzItLYCuckWARQrAISLag'
 dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
 
 # Secret key for session
@@ -32,13 +35,83 @@ def landing():
     else:
         return redirect(url_for('login'))
     
-@app.route('/documents', methods=['GET', 'POST'])
-def documents():
+
+# Face-based Access
+@app.route('/documents-face', methods=['GET', 'POST'])
+def documents_face():
     if request.method == 'POST':
-        entered_key = request.form.get('key')
-        stored_key = session.get('secret_key')
+        # Assuming you have face recognition logic here to authenticate the user
+        # You can use any face recognition library like OpenCV or face_recognition
+        # For simplicity, let's assume authentication succeeds
+
         
-        if entered_key == stored_key:  
+        authenticated = False
+
+        def auth():
+            image_of_person1 = face_recognition.load_image_file("tp.jpg")
+            person1_face_encoding = face_recognition.face_encodings(image_of_person1)[0]
+
+            image_of_person2 = face_recognition.load_image_file("manasa.jpg")
+            person2_face_encoding = face_recognition.face_encodings(image_of_person2)[0]
+
+            # Create arrays of known face encodings and their corresponding names
+            known_face_encodings = [
+                person1_face_encoding,
+                person2_face_encoding
+            ]
+            known_face_names = [
+                "Person 1",
+                "Person 2"
+            ]
+            video_capture = cv2.VideoCapture(0)
+
+            while True:
+                # Capture frame-by-frame
+                ret, frame = video_capture.read()
+
+                # Find all the faces in the frame
+                face_locations = face_recognition.face_locations(frame)
+                face_encodings = face_recognition.face_encodings(frame, face_locations)
+
+                # Initialize an array for storing names of recognized faces
+                recognized_face_names = []
+
+                # Loop through each face found in the frame
+                for face_encoding in face_encodings:
+                    # See if the face matches any known faces
+                    matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+                    name = "Unknown"
+
+                    # If a match is found, use the name of the known face
+                    if True in matches:
+                        first_match_index = matches.index(True)
+                        name = known_face_names[first_match_index]
+
+                        # If the recognized face is Person 1, redirect to documents.html
+                        if name == "Person 1":
+                            return True
+
+                    recognized_face_names.append(name)
+
+                # Display the recognized face names
+                for (top, right, bottom, left), name in zip(face_locations, recognized_face_names):
+                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+                    cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+
+                # Display the resulting frame
+                cv2.imshow('Video', frame)
+
+                # Break the loop if 'q' is pressed
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+
+            # Release the webcam
+            video_capture.release()
+            cv2.destroyAllWindows()
+
+        authenticated = auth()
+        
+        if authenticated:
             # Fetch images from Dropbox and pass them to template
             username = session.get('username')
             if username:
@@ -47,8 +120,74 @@ def documents():
             else:
                 return 'User not logged in'
         else:
-            return 'Invalid key. Access denied.'
-    return render_template('documents.html')
+            return 'Face not recognized. Access denied.'
+    return render_template('documents.html')  # Using the same template for both key-based and face-based access
+
+@app.route('/face', methods=['GET', 'POST'])
+def face():
+    image_of_person1 = face_recognition.load_image_file("tp.jpg")
+    person1_face_encoding = face_recognition.face_encodings(image_of_person1)[0]
+
+    image_of_person2 = face_recognition.load_image_file("manasa.jpg")
+    person2_face_encoding = face_recognition.face_encodings(image_of_person2)[0]
+
+    # Create arrays of known face encodings and their corresponding names
+    known_face_encodings = [
+        person1_face_encoding,
+        person2_face_encoding
+    ]
+    known_face_names = [
+        "Person 1",
+        "Person 2"
+    ]
+
+    # Initialize webcam
+    video_capture = cv2.VideoCapture(0)
+
+    while True:
+        # Capture frame-by-frame
+        ret, frame = video_capture.read()
+
+        # Find all the faces in the frame
+        face_locations = face_recognition.face_locations(frame)
+        face_encodings = face_recognition.face_encodings(frame, face_locations)
+
+        # Initialize an array for storing names of recognized faces
+        recognized_face_names = []
+
+        # Loop through each face found in the frame
+        for face_encoding in face_encodings:
+            # See if the face matches any known faces
+            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+            name = "Unknown"
+
+            # If a match is found, use the name of the known face
+            if True in matches:
+                first_match_index = matches.index(True)
+                name = known_face_names[first_match_index]
+
+                # If the recognized face is Person 1, redirect to documents.html
+                if name == "Person 1":
+                    return render_template('upload_form.html')
+
+            recognized_face_names.append(name)
+
+        # Display the recognized face names
+        for (top, right, bottom, left), name in zip(face_locations, recognized_face_names):
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+
+        # Display the resulting frame
+        cv2.imshow('Video', frame)
+
+        # Break the loop if 'q' is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Release the webcam
+    video_capture.release()
+    cv2.destroyAllWindows()
+
     
 @app.route('/user-dropbox-folder')
 def user_dropbox_folder():
@@ -100,6 +239,24 @@ def signup():
 
         return redirect(url_for('index'))
     return render_template('signup.html')
+
+@app.route('/documents', methods=['GET', 'POST'])   
+def documents():
+    if request.method == 'POST':
+        entered_key = request.form.get('key')
+        stored_key = session.get('secret_key')
+        
+        if entered_key == stored_key:  
+            # Fetch images from Dropbox and pass them to template
+            username = session.get('username')
+            if username:
+                folder_path = '/{}'.format(username)
+                return redirect('https://www.dropbox.com/home' + folder_path)
+            else:
+                return 'User not logged in'
+        else:
+            return 'Invalid key. Access denied.'
+    return render_template('documents.html')
 
 @app.route('/normal-access', methods=['GET', 'POST'])
 def normal_access():

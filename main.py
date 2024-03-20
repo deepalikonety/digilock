@@ -15,7 +15,7 @@ app.config['MYSQL_DB'] = 'deepali'
 
 mysql = MySQL(app)
 
-DROPBOX_ACCESS_TOKEN ='sl.BxzsrcweUMXtvH2MWiMxtzdgUdWjd5iwczcqzN8eSqjy_zbbFmvj3q7NZyJbNYAGObmsReLj8b8Zvn920N8srByJ0scWHh8tD2E_LZJ4LM8cdL1IDfGTA9Aii5cykP5YI5j7R6aWBhSm'
+DROPBOX_ACCESS_TOKEN ='sl.BxzFKT08aAmnNtz0kX7vBgxNLi8sHdu8ZxluD2utnjhA1r2DT0A3Loyf1EU7p6v-EZMVqFUHHIf0eV-IUvoSQ2OqD7xp1WdtaEwRMVapXnXREHT6HMTqOjWSzItLYCuckWARQrAISLag'
 dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
 
 # Load the known images and encodings

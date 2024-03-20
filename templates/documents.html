@@ -9,13 +9,23 @@
 <body>
     <div class="container">
         <h3>Welcome to Your Documents</h3>
-        <form method="post">
+        
+        <!-- Normal Key-based Access -->
+        <form method="post" action="/documents">
             <div class="input-group">
                 <label for="key" class="label">Enter Secret Key:</label>
                 <input type="password" id="key" name="key" class="input-field" required>
             </div>
             <button type="submit">Submit</button>
         </form>
+        
+        <!-- Face-based Access -->
+        <form method="post" action="/documents-face">
+            <p>Face Recognition Authentication</p>
+            <!-- Include face recognition related input fields if necessary -->
+            <button type="submit">Authenticate with Face</button>
+        </form>
+
         {% if files %}
             <h2>Your Uploaded Images:</h2>
             <ul>
