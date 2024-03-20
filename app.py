@@ -220,9 +220,14 @@ def login():
             return 'Invalid username or password'
     return render_template('login.html')
 
+
 @app.route('/logout', methods=['GET','POST'])
 def logout():
     return render_template('login.html')
+
+@app.route('/profile', methods=['GET','POST'])
+def profile():
+    return render_template('profile.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -243,6 +248,7 @@ def signup():
 
         return redirect(url_for('index'))
     return render_template('signup.html')
+
 
 @app.route('/documents', methods=['GET', 'POST'])   
 def documents():
