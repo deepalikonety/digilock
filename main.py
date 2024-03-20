@@ -8,8 +8,18 @@ import threading
 
 app = Flask(__name__)
 
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = 'dbms'
+app.config['MYSQL_DB'] = 'deepali'
+
+mysql = MySQL(app)
+
+DROPBOX_ACCESS_TOKEN ='sl.BxzsrcweUMXtvH2MWiMxtzdgUdWjd5iwczcqzN8eSqjy_zbbFmvj3q7NZyJbNYAGObmsReLj8b8Zvn920N8srByJ0scWHh8tD2E_LZJ4LM8cdL1IDfGTA9Aii5cykP5YI5j7R6aWBhSm'
+dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+
 # Load the known images and encodings
-image_of_person1 = face_recognition.load_image_file("deepali.jpg")
+image_of_person1 = face_recognition.load_image_file("tp.jpg")
 person1_face_encoding = face_recognition.face_encodings(image_of_person1)[0]
 
 image_of_person2 = face_recognition.load_image_file("manasa.jpg")
@@ -30,7 +40,7 @@ from flask import redirect, url_for
 @app.route('/face-recognition')
 def face_recognise():
     # Load the known images and encodings
-    image_of_person1 = face_recognition.load_image_file("deepali.jpg")
+    image_of_person1 = face_recognition.load_image_file("tp.jpg")
     person1_face_encoding = face_recognition.face_encodings(image_of_person1)[0]
 
     image_of_person2 = face_recognition.load_image_file("manasa.jpg")
@@ -42,7 +52,7 @@ def face_recognise():
         person2_face_encoding
     ]
     known_face_names = [
-        "manu",
+        "Person 1",
         "Person 2"
     ]
 
@@ -72,8 +82,8 @@ def face_recognise():
                 name = known_face_names[first_match_index]
 
                 # If the recognized face is Person 1, redirect to documents.html
-                if name == "Person 2":
-                    return redirect(url_for('http://127.0.0.1:5000/normal-access'))
+                if name == "Person 1":
+                    return render_template('upload_form.html')
 
             recognized_face_names.append(name)
 
@@ -106,37 +116,37 @@ def upload_image():
             return 'No selected file'
 
         username = session.get('username')
-        if username:
+        # if username:
             # Create folder if it doesn't exist
-            folder_path = '/{}'.format(username)
-            try:
-                dbx.files_create_folder(folder_path)
-            except dropbox.exceptions.ApiError as e:
-                if e.error.is_path() and e.error.get_path().is_conflict():
-                    pass  # Folder already exists
+        folder_path = '/{}'.format(username)
+        try:
+            dbx.files_create_folder(folder_path)
+        except dropbox.exceptions.ApiError as e:
+            if e.error.is_path() and e.error.get_path().is_conflict():
+                pass  # Folder already exists
 
             # Read the file contents from the FileStorage object
-            file_contents = file.read()
+        file_contents = file.read()
 
-            try:
-                cur = mysql.connection.cursor()
+        try:
+            cur = mysql.connection.cursor()
 
                 # Insert image details into MySQL table without id
-                cur.execute("INSERT INTO images (filename) VALUES (%s)", (file.filename,))
-                mysql.connection.commit()
-                cur.close()
+            cur.execute("INSERT INTO images (filename) VALUES (%s)", (file.filename,))
+            mysql.connection.commit()
+            cur.close()
 
                 # Upload the image file to the user's folder in Dropbox
-                file_path = '{}/{}'.format(folder_path, file.filename)
-                dbx.files_upload(file_contents, file_path)
+            file_path = '{}/{}'.format(folder_path, file.filename)
+            dbx.files_upload(file_contents, file_path)
 
-                return 'File uploaded successfully to {}'.format(username)
+            return 'File uploaded successfully to {}'.format(username)
 
-            except Exception as e:
-                return 'Error: {}'.format(e)
+        except Exception as e:
+            return 'Error: {}'.format(e)
 
-        else:
-            return 'User not logged in'
+        # else:
+        #     return 'User not logged in'
 
     return render_template('upload_form.html')
 
