@@ -9,7 +9,7 @@ import threading
 app = Flask(__name__)
 
 # Load the known images and encodings
-image_of_person1 = face_recognition.load_image_file("deepali.jpg")
+image_of_person1 = face_recognition.load_image_file("tp.jpg")
 person1_face_encoding = face_recognition.face_encodings(image_of_person1)[0]
 
 image_of_person2 = face_recognition.load_image_file("manasa.jpg")
@@ -30,7 +30,7 @@ from flask import redirect, url_for
 @app.route('/face-recognition')
 def face_recognise():
     # Load the known images and encodings
-    image_of_person1 = face_recognition.load_image_file("deepali.jpg")
+    image_of_person1 = face_recognition.load_image_file("tp.jpg")
     person1_face_encoding = face_recognition.face_encodings(image_of_person1)[0]
 
     image_of_person2 = face_recognition.load_image_file("manasa.jpg")
@@ -72,7 +72,7 @@ def face_recognise():
                 name = known_face_names[first_match_index]
 
                 # If the recognized face is Person 1, redirect to documents.html
-                if name == "Person 2":
+                if name == "Person 1":
                     return redirect(url_for('upload_image'))
 
             recognized_face_names.append(name)

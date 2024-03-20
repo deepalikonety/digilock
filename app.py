@@ -6,7 +6,7 @@ import dropbox
 app = Flask(__name__)
 
 # MySQL Configuration
-app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_HOST'] = 'LAPTOP-746MCFVO'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'prajwaltp'
 app.config['MYSQL_DB'] = 'digi'
@@ -112,6 +112,10 @@ def normal_access():
             # Deny access and display an error message if the entered key is incorrect
             return 'Invalid key. Access denied.'
     return render_template('normal-access.html')
+
+@app.route('/face-recognition')
+def face_recognition():
+    return redirect('https://127.0.0.1:8080/face-recognition')
 
 
 @app.route('/upload', methods=['GET', 'POST'])
