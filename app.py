@@ -8,13 +8,13 @@ app = Flask(__name__)
 # MySQL Configuration
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'dbms'
-app.config['MYSQL_DB'] = 'deepali'
+app.config['MYSQL_PASSWORD'] = 'prajwaltp'
+app.config['MYSQL_DB'] = 'digi'
 
 mysql = MySQL(app)
 
 # Routes for user authentication
-DROPBOX_ACCESS_TOKEN = ""
+DROPBOX_ACCESS_TOKEN ='sl.BxE0rzuACOu1AdNMGzQ-zMxse71jGV7zBP8c5IPiFJdJnFygV43XbLewwtR8qZip46H9XbrJ3rnbQeutHuwVbi54V4K0bM8RTeQE-rEKkOuEbB6w5NNTQfKVdpdxvn3eY3Ehf5KuE_Eb'
 dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
 
 # Secret key for session
