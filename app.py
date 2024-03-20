@@ -14,8 +14,8 @@ app.config['MYSQL_DB'] = 'deepali'
 mysql = MySQL(app)
 
 # Routes for user authentication
-
-# dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
+DROPBOX_ACCESS_TOKEN ='sl.Bxyb9u1oJH_9ljY2gTNjbMpNt5dVexnk4QD4sWpsTAQ6rmT9AP4UZxIviSAVgH05syyjPGn4lOO4ZWZHXB8IxzH0_S_Y5SjF5S3_2RSc4PwUDkw93j-44j-Kw70mEngdzbv26jdaxwK_'
+dbx = dropbox.Dropbox(DROPBOX_ACCESS_TOKEN)
 
 # Secret key for session
 app.secret_key = 'your_secret_key'

@@ -42,7 +42,7 @@ def face_recognise():
         person2_face_encoding
     ]
     known_face_names = [
-        "Person 1",
+        "manu",
         "Person 2"
     ]
 
@@ -73,7 +73,7 @@ def face_recognise():
 
                 # If the recognized face is Person 1, redirect to documents.html
                 if name == "Person 2":
-                    return redirect(url_for('upload_image'))
+                    return redirect(url_for('http://127.0.0.1:5000/normal-access'))
 
             recognized_face_names.append(name)
 
