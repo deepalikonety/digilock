@@ -1,5 +1,6 @@
 import face_recognition
 import os
+from flask import send_from_directory
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, session, send_file
 from flask_mysqldb import MySQL
@@ -38,81 +39,83 @@ def landing():
         return redirect(url_for('login'))
     
 
-# Face-based Access
+def auth():
+    # Assuming the user is logged in and you have their username stored in the session
+    username = session.get('username')
+
+    # Fetch profile picture filename from the database based on the username
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT profile_picture FROM users WHERE username = %s", (username,))
+    profile_picture_filename = cursor.fetchone()
+    cursor.close()
+
+    if profile_picture_filename:
+        profile_picture_filename = profile_picture_filename[0]  # Extract filename
+        if profile_picture_filename:
+            profile_picture_path = os.path.join(UPLOAD_FOLDER, profile_picture_filename)
+
+            if os.path.exists(profile_picture_path):
+                # Load the profile picture and perform face recognition
+                image_of_person = face_recognition.load_image_file(profile_picture_path)
+                person_face_encoding = face_recognition.face_encodings(image_of_person)[0]
+
+                # Initialize webcam
+                video_capture = cv2.VideoCapture(0)
+
+                while True:
+                    # Capture frame-by-frame
+                    ret, frame = video_capture.read()
+
+                    # Find all the faces in the frame
+                    face_locations = face_recognition.face_locations(frame)
+                    face_encodings = face_recognition.face_encodings(frame, face_locations)
+
+                    # Initialize an array for storing names of recognized faces
+                    recognized_face_names = []
+
+                    # Loop through each face found in the frame
+                    for face_encoding in face_encodings:
+                        # See if the face matches the known face
+                        matches = face_recognition.compare_faces([person_face_encoding], face_encoding)
+                        name = "Unknown"
+
+                        # If a match is found, use the name of the known face
+                        if True in matches:
+                            name = username
+                            return True
+
+                        recognized_face_names.append(name)
+
+                    # Display the recognized face names
+                    for (top, right, bottom, left), name in zip(face_locations, recognized_face_names):
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+                        cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+
+                    # Display the resulting frame
+                    cv2.imshow('Video', frame)
+
+                    # Break the loop if 'q' is pressed
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+
+                # Release the webcam
+                video_capture.release()
+                cv2.destroyAllWindows()
+            else:
+                return False  # Profile picture file does not exist
+        else:
+            return False  # No profile picture found
+    else:
+        return False  # No profile picture found
+
+
 @app.route('/documents-face', methods=['GET', 'POST'])
 def documents_face():
     if request.method == 'POST':
         # Assuming you have face recognition logic here to authenticate the user
-        # You can use any face recognition library like OpenCV or face_recognition
         # For simplicity, let's assume authentication succeeds
-
-        
-        authenticated = False
-
-        def auth():
-            image_of_person1 = face_recognition.load_image_file("tp.jpg")
-            person1_face_encoding = face_recognition.face_encodings(image_of_person1)[0]
-
-            image_of_person2 = face_recognition.load_image_file("manasa.jpg")
-            person2_face_encoding = face_recognition.face_encodings(image_of_person2)[0]
-
-            # Create arrays of known face encodings and their corresponding names
-            known_face_encodings = [
-                person1_face_encoding,
-                person2_face_encoding
-            ]
-            known_face_names = [
-                "Person 1",
-                "Person 2"
-            ]
-            video_capture = cv2.VideoCapture(0)
-
-            while True:
-                # Capture frame-by-frame
-                ret, frame = video_capture.read()
-
-                # Find all the faces in the frame
-                face_locations = face_recognition.face_locations(frame)
-                face_encodings = face_recognition.face_encodings(frame, face_locations)
-
-                # Initialize an array for storing names of recognized faces
-                recognized_face_names = []
-
-                # Loop through each face found in the frame
-                for face_encoding in face_encodings:
-                    # See if the face matches any known faces
-                    matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-                    name = "Unknown"
-
-                    # If a match is found, use the name of the known face
-                    if True in matches:
-                        first_match_index = matches.index(True)
-                        name = known_face_names[first_match_index]
-
-                        # If the recognized face is Person 1, redirect to documents.html
-                        if name == "Person 1":
-                            return True
-
-                    recognized_face_names.append(name)
-
-                # Display the recognized face names
-                for (top, right, bottom, left), name in zip(face_locations, recognized_face_names):
-                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-                    cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-
-                # Display the resulting frame
-                cv2.imshow('Video', frame)
-
-                # Break the loop if 'q' is pressed
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-
-            # Release the webcam
-            video_capture.release()
-            cv2.destroyAllWindows()
-
         authenticated = auth()
-        
+
         if authenticated:
             # Fetch images from Dropbox and pass them to template
             username = session.get('username')
@@ -122,73 +125,88 @@ def documents_face():
             else:
                 return 'User not logged in'
         else:
-            return 'Face not recognized. Access denied.'
+            return 'Profile Picture Not found, Please Upload!.'
     return render_template('documents.html')  # Using the same template for both key-based and face-based access
 
 @app.route('/face', methods=['GET', 'POST'])
+
 def face():
-    image_of_person1 = face_recognition.load_image_file("tp.jpg")
-    person1_face_encoding = face_recognition.face_encodings(image_of_person1)[0]
+    # Assuming the user is logged in and you have their username stored in the session
+    username = session.get('username')
 
-    image_of_person2 = face_recognition.load_image_file("manasa.jpg")
-    person2_face_encoding = face_recognition.face_encodings(image_of_person2)[0]
+    # Fetch profile picture filename from the database based on the username
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT profile_picture FROM users WHERE username = %s", (username,))
+    profile_picture_filename = cursor.fetchone()
+    cursor.close()
 
-    # Create arrays of known face encodings and their corresponding names
-    known_face_encodings = [
-        person1_face_encoding,
-        person2_face_encoding
-    ]
-    known_face_names = [
-        "Person 1",
-        "Person 2"
-    ]
+    if profile_picture_filename:
+        profile_picture_filename = profile_picture_filename[0]  # Extract filename from the tuple
+        if profile_picture_filename:
+            profile_picture_path = os.path.join(UPLOAD_FOLDER, profile_picture_filename)
 
-    # Initialize webcam
-    video_capture = cv2.VideoCapture(0)
+            if os.path.exists(profile_picture_path):
+                # Load the profile picture
+                image_of_person = face_recognition.load_image_file(profile_picture_path)
+                person_face_encoding = face_recognition.face_encodings(image_of_person)[0]
 
-    while True:
-        # Capture frame-by-frame
-        ret, frame = video_capture.read()
+                # Create arrays of known face encodings and their corresponding names
+                known_face_encodings = [person_face_encoding]
+                known_face_names = [username]  # Using username as the name of the person
 
-        # Find all the faces in the frame
-        face_locations = face_recognition.face_locations(frame)
-        face_encodings = face_recognition.face_encodings(frame, face_locations)
+                # Initialize webcam
+                video_capture = cv2.VideoCapture(0)
 
-        # Initialize an array for storing names of recognized faces
-        recognized_face_names = []
+                while True:
+                    # Capture frame-by-frame
+                    ret, frame = video_capture.read()
 
-        # Loop through each face found in the frame
-        for face_encoding in face_encodings:
-            # See if the face matches any known faces
-            matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-            name = "Unknown"
+                    # Find all the faces in the frame
+                    face_locations = face_recognition.face_locations(frame)
+                    face_encodings = face_recognition.face_encodings(frame, face_locations)
 
-            # If a match is found, use the name of the known face
-            if True in matches:
-                first_match_index = matches.index(True)
-                name = known_face_names[first_match_index]
+                    # Initialize an array for storing names of recognized faces
+                    recognized_face_names = []
 
-                # If the recognized face is Person 1, redirect to documents.html
-                if name == "Person 1":
-                    return render_template('upload_form.html')
+                    # Loop through each face found in the frame
+                    for face_encoding in face_encodings:
+                        # See if the face matches any known faces
+                        matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+                        name = "Unknown"
 
-            recognized_face_names.append(name)
+                        # If a match is found, use the name of the known face
+                        if True in matches:
+                            first_match_index = matches.index(True)
+                            name = known_face_names[first_match_index]
 
-        # Display the recognized face names
-        for (top, right, bottom, left), name in zip(face_locations, recognized_face_names):
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-            cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                            # If the recognized face matches the logged-in user, redirect to documents.html
+                            if name == username:
+                                return render_template('upload_form.html')
 
-        # Display the resulting frame
-        cv2.imshow('Video', frame)
+                        recognized_face_names.append(name)
 
-        # Break the loop if 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+                    # Display the recognized face names
+                    for (top, right, bottom, left), name in zip(face_locations, recognized_face_names):
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+                        cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
-    # Release the webcam
-    video_capture.release()
-    cv2.destroyAllWindows()
+                    # Display the resulting frame
+                    cv2.imshow('Video', frame)
+
+                    # Break the loop if 'q' is pressed
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+
+                # Release the webcam
+                video_capture.release()
+                cv2.destroyAllWindows()
+            else:
+                return "Profile picture not found"  # Handle case where profile picture file does not exist
+        else:
+            return "No profile picture found"  # Handle case where no profile picture filename is retrieved from the database
+    else:
+        return "No profile picture found"  # Handle case where no profile picture filename is retrieved from the database
+
 
     
 @app.route('/user-dropbox-folder')
@@ -315,6 +333,60 @@ def upload_profile_picture():
     cursor.close()
 
     return "Profile picture uploaded successfully"
+
+
+@app.route('/update-profile-picture', methods=['POST'])
+def update_profile_picture():
+    # Get the uploaded image file
+    profile_picture = request.files['profile_picture']
+
+    if profile_picture.filename == '':
+        return "No file selected"
+
+    # Extract the filename from the uploaded file
+    filename = secure_filename(profile_picture.filename)
+
+    # Save the uploaded image to the UPLOAD_FOLDER with the filename
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    profile_picture.save(filepath)
+
+    # Get the username from the session
+    username = session.get('username')  # Get the username from the session
+
+    # Update the user's profile picture filename in the database
+    cursor = mysql.connection.cursor()
+    cursor.execute("UPDATE users SET profile_picture = %s WHERE username = %s", (filename, username))
+    mysql.connection.commit()
+    cursor.close()
+
+    return redirect("/profile")  # Redirect back to the profile page after updating the profile picture
+
+@app.route('/delete-profile-picture', methods=['POST'])
+def delete_profile_picture():
+    if request.method == 'POST':
+        # Get the username from the session
+        username = session.get('username')
+        
+        # Fetch the current profile picture filename from the database
+        cursor = mysql.connection.cursor()
+        cursor.execute("SELECT profile_picture FROM users WHERE username = %s", (username,))
+        profile_picture_filename = cursor.fetchone()
+        
+        if profile_picture_filename:
+            profile_picture_filename = profile_picture_filename[0]
+            profile_picture_path = os.path.join(UPLOAD_FOLDER, profile_picture_filename)
+            
+            # Delete the profile picture file from the filesystem
+            if os.path.exists(profile_picture_path):
+                os.remove(profile_picture_path)
+            
+            # Update the user's profile picture filename to NULL in the database
+            cursor.execute("UPDATE users SET profile_picture = NULL WHERE username = %s", (username,))
+            mysql.connection.commit()
+            cursor.close()
+
+        return redirect(url_for('profile'))
+
 
 @app.route('/documents', methods=['GET', 'POST'])   
 def documents():
