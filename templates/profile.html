@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <!-- Link your CSS file here if needed -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='sccs.css') }}">
+</head>
+<body>
+    <div class="hi">
+        <h1>Welcome, {{ username }}</h1>
+    </div>
+
+    <div class="menu">
+        <ul>
+            <li><a href="/profile">Profile</a></li>
+            <li><a href="/documents">Documents</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </div>
+
+    <main>
+        <section>
+            <h2>Profile Picture</h2>
+            <!-- Display the profile picture if it exists -->
+            {% if profile_picture_path is not none %}
+            <img src="{{ url_for('static', filename=profile_picture_path) }}" alt="Profile Picture">
+            {% else %}
+            <!-- Show upload option if no profile picture is available -->
+            <form action="/upload-profile-picture" method="post" enctype="multipart/form-data">
+                <input type="file" name="profile_picture" accept="image/*" required>
+                <button type="submit">Upload Picture</button>
+            </form>
+            {% endif %}
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Digiscan Access System. All rights reserved.</p>
+    </footer>
+</body>
+</html>

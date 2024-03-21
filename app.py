@@ -1,4 +1,6 @@
 import face_recognition
+import os
+from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, session, send_file
 from flask_mysqldb import MySQL
 import io
@@ -225,9 +227,9 @@ def login():
 def logout():
     return render_template('login.html')
 
-@app.route('/profile', methods=['GET','POST'])
-def profile():
-    return render_template('profile.html')
+# @app.route('/profile', methods=['GET','POST'])
+# def profile():
+#     return render_template('profile.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -249,6 +251,70 @@ def signup():
         return redirect(url_for('index'))
     return render_template('signup.html')
 
+
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+# Render profile page
+@app.route('/profile')
+def profile():
+    # Assuming the user is logged in and you have their username stored in the session
+    username = session.get('username')  # Get the username from the session
+
+    # Fetch user data from the database based on the username
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+    user_data = cursor.fetchone()
+
+    user = {}  # Initialize an empty dictionary
+    if user_data:
+        columns = [desc[0] for desc in cursor.description]  # Get column names
+        user = {columns[i]: user_data[i] for i in range(len(columns))}  # Convert to dictionary
+
+    # Check if profile picture path exists in user data
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT profile_picture FROM users WHERE username = %s", (username,))
+    profile_picture_path = cursor.fetchone()
+    cursor.close()
+
+    if profile_picture_path  != 'NULL':
+        # If profile picture exists in the database, extract the path
+        profile_picture_path = profile_picture_path[0]
+    else:
+        # If profile picture does not exist in the database, set it to None
+        profile_picture_path = None
+
+    if user:
+        return render_template('profile.html', username=user['username'], profile_picture_path=profile_picture_path)
+    else:
+        return "User not found"
+
+
+# Handle profile picture upload
+@app.route('/upload-profile-picture', methods=['POST'])
+def upload_profile_picture():
+    # Get the uploaded image file
+    profile_picture = request.files['profile_picture']
+
+    if profile_picture.filename == '':
+        return "No file selected"
+
+    # Get the username from the session
+    username = session.get('username')  # Get the username from the session
+
+    # Save the uploaded image to the UPLOAD_FOLDER with the username as its filename
+    filename = secure_filename(profile_picture.filename)
+    filepath = os.path.join(UPLOAD_FOLDER, profile_picture.filename)
+    profile_picture.save(filepath)
+
+    # Update the user's profile picture file path in the database
+    cursor = mysql.connection.cursor()
+    cursor.execute("UPDATE users SET profile_picture = %s WHERE username = %s", (filename, username))
+    mysql.connection.commit()
+    cursor.close()
+
+    return "Profile picture uploaded successfully"
 
 @app.route('/documents', methods=['GET', 'POST'])   
 def documents():
